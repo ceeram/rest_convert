@@ -83,10 +83,7 @@
 
 
 			<?php
-				$userLink = $this->Html->link(
-					$article['User']['username'],
-					array('admin' => false, 'controller' => 'users', 'action' => 'view', $article['User']['slug']));
-				$author = sprintf(__d('blazon', 'By %s'), $userLink);
+				$author = sprintf(__d('blazon', 'By %s'), $article['User']['username']);
 				$intro = $this->Parser->parse($article['Article']['intro'], $article['Article']['markup']);
 				$url = Router::url(array('admin' => false, 'controller' => 'articles', 'action' => 'download_code', $article['Article']['id'], 'block', '%s'));
 				$url = str_replace(Router::url('/'), '/', $url);

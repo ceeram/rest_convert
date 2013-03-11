@@ -3,6 +3,11 @@ App::uses('Shell', 'Console');
 App::uses('Controller', 'Controller');
 App::uses('Folder', 'Utility');
 
+Configure::write('Parsers.bbcode', array(
+		'name' => 'BBCode',
+		'class' => array('HtmlBbcodeParser', 'RestConvert.Parser')
+));
+
 class ArticleShell extends Shell {
 
 	public $uses = array('Article');
@@ -132,6 +137,9 @@ class ArticleShell extends Shell {
 		$this->_write($tmpfile, $html);
 		$restfile = $this->_fullpath($article);
 		exec("html2rest $tmpfile > $restfile");
+		$contents = file_get_contents($restfile);
+		$contents = str_replace("\n\n\n", "\n\n", $contents);
+		file_put_contents($restfile, $contents);
 		$this->_delete($tmpfile);
 	}
 
