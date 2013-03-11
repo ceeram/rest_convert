@@ -139,6 +139,8 @@ class ArticleShell extends Shell {
 		exec("html2rest $tmpfile > $restfile");
 		$contents = file_get_contents($restfile);
 		$contents = str_replace("\n\n\n", "\n\n", $contents);
+		$meta = "\n.. meta\n\n::\n";
+		$contents = str_replace($meta, ".. meta::", $contents);
 		file_put_contents($restfile, $contents);
 		$this->_delete($tmpfile);
 	}

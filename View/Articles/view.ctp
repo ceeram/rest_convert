@@ -30,6 +30,7 @@
 		<article class="columns ten <?php echo $markup ?>">
 			<h1><?php echo $heading;?></h1>
 			<span class="author">
+				<p>
 				<?php echo __d('blazon', 'by %s', $article['User']['username']); ?>
 				<time datetime="<?php echo $this->Time->format($article['Article']['published_date'], '%Y-%m-%d'); ?>">
 				<?php
@@ -37,8 +38,13 @@
 					echo __('on %s', $articleDate);
 				?>
 				</time>
+				</p>
 			</span>
-			<div class="intro"><?php echo $article['Article']['intro']; ?></div>
+			<div class="intro">
+				<p>
+					<?php echo $article['Article']['intro']; ?>
+				</p>
+			</div>
 			<?php foreach ($pages as $i => $page): ?>
 				<div id="content-page-<?php echo $i+1; ?>" class="body"><?php echo $page; ?></div>
 			<?php endforeach; ?>
@@ -94,7 +100,7 @@
 
 <?php
 	$metaTags = explode(', ', $metaTags);
-	$metaTags = implode(', ', array_flip(array_flip($metaTags)));
+	$metaTags = implode(',', array_flip(array_flip($metaTags)));
 
 	$this->set('title_for_layout', $heading);
 	Configure::write('App.metatags', array(
