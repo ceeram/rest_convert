@@ -12,7 +12,6 @@
 			'title' => $title_for_layout,
 			'description' => 'CakePHP Articles',
 			'keywords' => 'cakephp, cakephp articles, articles about cakephp, cakephp tutorial, cakephp news, cakephp code, cakephp release',
-			'abstract' => 'cakephp php development programming framework mvc'
 		), (array) Configure::read('App.metatags'));
 	?>
 </head>

@@ -107,5 +107,7 @@
 		'title' => $heading,
 		'description' => 'CakePHP Article related to ' . $metaTags,
 		'keywords' => $metaTags,
-		'copyright' => 'Copyright ' . date('Y', strtotime($article['Article']['created'])) . ' ' . $article['User']['username']));
+		'copyright' => 'Copyright ' . date('Y', strtotime($article['Article']['created'])) . ' ' . $article['User']['username'],
+		'category' => $article['Category']['slug']
+	));
 ?>

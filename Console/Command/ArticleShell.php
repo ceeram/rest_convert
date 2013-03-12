@@ -7,6 +7,10 @@ Configure::write('Parsers.bbcode', array(
 		'name' => 'BBCode',
 		'class' => array('HtmlBbcodeParser', 'RestConvert.Parser')
 ));
+Configure::write('Parsers.doc_markdown', array(
+		'name' => 'Markdown',
+		'class' => array('RestMarkdownParser', 'RestConvert.Parser')
+));
 
 class ArticleShell extends Shell {
 
