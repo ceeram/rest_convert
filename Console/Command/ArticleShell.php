@@ -35,18 +35,83 @@ class ArticleShell extends Shell {
 
 	public $_categoryMap = array();
 
+	protected $_basePath = APP;
+
+/**
+ * User input with absolute path, or relative to APP
+ *
+ * @return string Absolute path to write
+ */
+	protected function _base() {
+		$path = null;
+		while (!is_writeable($path)) {
+			$path = $this->in('Please provide path to write location', null, $this->_basePath);
+			if (strpos($path, DS) !== 0) {
+				$path = $this->_basePath . $path;
+			}
+			if (strpos($path, DS, strlen($path) -1) === false) {
+				$path .= DS;
+			}
+		}
+		$ok = $this->in('Write location: ' . $path, array('yes' => 'y', 'abort' => 'a'), 'y');
+		if ($ok == 'a') {
+			$this->out('Aborted');
+			$this->_stop();
+		}
+		return $path;
+	}
+
+/**
+ *
+ * @param string $path
+ * @return string Absolute path
+ */
+	protected function _basepath($path = null) {
+		if ($path) {
+			$this->_basePath = $path;
+		}
+		return $this->_basePath;
+	}
+
+	public function single() {
+		$id = null;
+		if (!empty($this->args)) {
+			$id = $this->args[0];
+		}
+		$this->_basePath($this->_base());
+
+		$options = $this->_options();
+		$this->_folders($options['subdir']);
+
+		while (!$this->Article->exists($id)) {
+			$id = $this->in('Article id: ');
+		}
+		$this->_generate($id, $options['subdir']);
+	}
+
+	protected function _options() {
+		$lang = !empty($this->params['lang']) ? $this->params['lang'] : 'eng';
+		$subdir = !empty($this->params['subdir']) ? $this->params['subdir'] : 'en';
+
+		return array('lang' => $lang, 'subdir' => $subdir);
+	}
+
 /**
  * Generate .rst files for all articles
  *
  */
 	public function generate() {
-		$this->_folders();
+		$this->_basePath($this->_base());
+
+		$options = $this->_options();
+		$this->_folders($options['subdir']);
+
 		$categories = $this->_categoryMap();
 		foreach ($categories as $id => $path) {
 			$this->hr();
 			$this->out('Starting to generate articles in: '. $path);
 			$this->hr();
-			$this->_generateCategory($id);
+			$this->_generateCategory($id, $options);
 		}
 	}
 
@@ -54,11 +119,9 @@ class ArticleShell extends Shell {
  * Create folder structures for all languages and categories
  *
  */
-	protected function _folders() {
+	protected function _folders($subdir = 'en') {
 		$this->_categoryMap();
-		foreach($this->_getLanguages() as $language) {
-			$this->_folderStructure($language);
-		}
+		$this->_folderStructure($subdir);
 	}
 
 /**
@@ -66,24 +129,12 @@ class ArticleShell extends Shell {
  *
  * @param string $language
  */
-	protected function _folderStructure($language) {
-		$base = TMP . 'static' . DS . $language . DS;
+	protected function _folderStructure($subdir = 'en') {
+		$base = $this->_basePath() . $subdir . DS;
 		$Folder = new Folder($base, true);
 		foreach($this->_categoryMap as $path) {
 			$Folder->create($base . $path);
 		}
-	}
-
-/**
- * Get a list of all languages used by articles
- *
- * @return array
- */
-	protected function _getLanguages() {
-		return array_keys($this->Article->find('list', array(
-			'fields' => array('Article.lang', 'Article.lang', 'Article.lang'),
-			'conditions' => array('Article.parent_id' => null)
-		)));
 	}
 
 /**
@@ -114,16 +165,17 @@ class ArticleShell extends Shell {
  *
  * @param type $id Category id
  */
-	protected function _generateCategory($id) {
+	protected function _generateCategory($id, $options) {
 		$articles = $this->Article->find('list', array(
 			'conditions' => array(
 				'Article.category_id' => $id,
-				'Article.parent_id' => null
+				'Article.parent_id' => null,
+				'Article.lang' => $options['lang']
 			),
 			'fields' => array('Article.id', 'Article.id')
 		));
 		foreach ($articles as $id) {
-			$this->_generate($id);
+			$this->_generate($id, $options['subdir']);
 		}
 	}
 
@@ -132,14 +184,14 @@ class ArticleShell extends Shell {
  *
  * @param integer $id
  */
-	protected function _generate($id = null) {
+	protected function _generate($id = null, $subdir = 'en') {
 		$article = $this->Article->view($id);
 		$this->out('Generating article: ' . $article['Article']['title']);
 		$this->_viewVars = compact('article');
 		$html = $this->_render();
 		$tmpfile = TMP . 'view_' . $id . '.html';
 		$this->_write($tmpfile, $html);
-		$restfile = $this->_fullpath($article);
+		$restfile = $this->_fullpath($article, $subdir);
 		exec("html2rest $tmpfile > $restfile");
 		$contents = file_get_contents($restfile);
 		$contents = str_replace("\n\n\n", "\n\n", $contents);
@@ -171,9 +223,9 @@ class ArticleShell extends Shell {
  * @param string $article
  * @return string
  */
-	protected function _fullpath($article) {
-		$path = $article['Article']['lang'] . DS . $this->_categoryMap[$article['Article']['category_id']] . DS;
-		return TMP . 'static' . DS . $path . Inflector::slug($article['Article']['title'], '-') . '.rst';
+	protected function _fullpath($article, $subdir) {
+		$base = $this->_basePath() . $subdir . DS . $this->_categoryMap[$article['Article']['category_id']] . DS;
+		return $base . Inflector::slug($article['Article']['title'], '-') . '.rst';
 	}
 
 /**
