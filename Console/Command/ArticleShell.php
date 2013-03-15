@@ -136,7 +136,8 @@ class ArticleShell extends Shell {
 	protected function _folderStructure($subdir = 'en') {
 		$base = $this->_basePath() . $subdir . DS;
 		$Folder = new Folder($base, true);
-		foreach($this->_categoryMap as $path) {
+		$map = array_unique($this->_categoryMap);
+		foreach($map as $path) {
 			$Folder->create($base . $path);
 		}
 	}
@@ -147,21 +148,14 @@ class ArticleShell extends Shell {
  * @return array
  */
 	protected function _categoryMap() {
-		$this->Article->Category->virtualFields['path'] = "CONCAT_WS('/', Parent.slug, Category.slug)";
-
-		$result = $this->_categoryMap = $this->Article->Category->find('list', array(
-			'fields' => array('Category.id', 'path'),
-			'joins' => array(
-				array(
-					'table' => 'categories',
-					'alias' => 'Parent',
-					'type' => 'left',
-					'conditions' => array('Parent.id = Category.category_id')
-				)
-			)
-		));
-		unset($this->Article->Category->virtualFields['path']);
-		return $result;
+		$result = $this->Article->Category->find('list');
+		foreach ($result as $id => $path) {
+			if ($path !== 'News') {
+				$path = 'articles';
+			}
+			$result[$id] = strtolower($path);
+		}
+		return $this->_categoryMap = $result;
 	}
 
 /**
@@ -201,6 +195,7 @@ class ArticleShell extends Shell {
 		$contents = str_replace("\n\n\n", "\n\n", $contents);
 		$meta = "\n.. meta\n\n::\n";
 		$contents = str_replace($meta, ".. meta::", $contents);
+		$contents = ltrim($contents);
 		file_put_contents($restfile, $contents);
 		$this->_delete($tmpfile);
 	}
@@ -229,7 +224,23 @@ class ArticleShell extends Shell {
  */
 	protected function _fullpath($article, $subdir) {
 		$base = $this->_basePath() . $subdir . DS . $this->_categoryMap[$article['Article']['category_id']] . DS;
-		return $base . Inflector::slug($article['Article']['title'], '-') . '.rst';
+		$date = $this->_datedirs($article['Article']['created'], $base);
+		return $base . $date . Inflector::slug($article['Article']['title'], '-') . '.rst';
+	}
+
+/**
+ *
+ * @param type $created
+ * @param type $base
+ * @return string
+ */
+	protected function _datedirs($created, $base) {
+		$parts = explode('-', $created, 3);
+		array_pop($parts);
+		$path = implode(DS, $parts) . DS;
+		$Folder = new Folder($base, true);
+		$Folder->create($base . $path);
+		return $path;
 	}
 
 /**
