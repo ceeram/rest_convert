@@ -37,6 +37,52 @@ class ArticleShell extends Shell {
 
 	protected $_basePath = APP;
 
+	public function single() {
+		$id = null;
+		if (!empty($this->args)) {
+			$id = $this->args[0];
+		}
+		$this->_basePath($this->_base());
+
+		$options = $this->_options();
+		$this->_folders($options['subdir']);
+
+		while (!$this->Article->exists($id)) {
+			$id = $this->in('Article id: ');
+		}
+		$this->_generate($id, $options['subdir']);
+	}
+
+/**
+ * Generate .rst files for all articles
+ *
+ */
+	public function generate() {
+		$this->_basePath($this->_base());
+
+		$options = $this->_options();
+		$this->_folders($options['subdir']);
+
+		$categories = $this->_categoryMap();
+		foreach ($categories as $id => $path) {
+			$this->hr();
+			$this->out('Starting to generate articles in: '. $path);
+			$this->hr();
+			$this->_generateCategory($id, $options);
+		}
+	}
+
+/**
+ *
+ * @return type
+ */
+	protected function _options() {
+		$lang = !empty($this->params['lang']) ? $this->params['lang'] : 'eng';
+		$subdir = !empty($this->params['subdir']) ? $this->params['subdir'] : 'en';
+
+		return array('lang' => $lang, 'subdir' => $subdir);
+	}
+
 /**
  * User input with absolute path, or relative to APP
  *
@@ -71,48 +117,6 @@ class ArticleShell extends Shell {
 			$this->_basePath = $path;
 		}
 		return $this->_basePath;
-	}
-
-	public function single() {
-		$id = null;
-		if (!empty($this->args)) {
-			$id = $this->args[0];
-		}
-		$this->_basePath($this->_base());
-
-		$options = $this->_options();
-		$this->_folders($options['subdir']);
-
-		while (!$this->Article->exists($id)) {
-			$id = $this->in('Article id: ');
-		}
-		$this->_generate($id, $options['subdir']);
-	}
-
-	protected function _options() {
-		$lang = !empty($this->params['lang']) ? $this->params['lang'] : 'eng';
-		$subdir = !empty($this->params['subdir']) ? $this->params['subdir'] : 'en';
-
-		return array('lang' => $lang, 'subdir' => $subdir);
-	}
-
-/**
- * Generate .rst files for all articles
- *
- */
-	public function generate() {
-		$this->_basePath($this->_base());
-
-		$options = $this->_options();
-		$this->_folders($options['subdir']);
-
-		$categories = $this->_categoryMap();
-		foreach ($categories as $id => $path) {
-			$this->hr();
-			$this->out('Starting to generate articles in: '. $path);
-			$this->hr();
-			$this->_generateCategory($id, $options);
-		}
 	}
 
 /**
@@ -207,8 +211,8 @@ class ArticleShell extends Shell {
  * @return array The rendered template wrapped in layout.
  */
 	protected function _render() {
-		$Controller = new Controller(new CakeRequest());
-		$View = new View($Controller);
+		//$Controller = new Controller(new CakeRequest());
+		$View = new View(null);
 		$View->viewVars = $this->_viewVars;
 		$View->helpers = $this->_helpers;
 		$View->viewPath = 'Articles';
