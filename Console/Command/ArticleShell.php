@@ -11,6 +11,10 @@ Configure::write('Parsers.doc_markdown', array(
 		'name' => 'Markdown',
 		'class' => array('RestMarkdownParser', 'RestConvert.Parser')
 ));
+Configure::write('Parsers.html', array(
+		'name' => 'Html',
+		'class' => array('RestHtmlParser', 'RestConvert.Parser')
+));
 
 class ArticleShell extends Shell {
 
@@ -78,7 +82,7 @@ class ArticleShell extends Shell {
  */
 	protected function _options() {
 		$lang = !empty($this->params['lang']) ? $this->params['lang'] : 'eng';
-		$subdir = !empty($this->params['subdir']) ? $this->params['subdir'] : 'en';
+		$subdir = !empty($this->params['subdir']) ? $this->params['subdir'] : 'src';
 
 		return array('lang' => $lang, 'subdir' => $subdir);
 	}
@@ -123,7 +127,7 @@ class ArticleShell extends Shell {
  * Create folder structures for all languages and categories
  *
  */
-	protected function _folders($subdir = 'en') {
+	protected function _folders($subdir = 'src') {
 		$this->_categoryMap();
 		$this->_folderStructure($subdir);
 	}
@@ -133,7 +137,7 @@ class ArticleShell extends Shell {
  *
  * @param string $language
  */
-	protected function _folderStructure($subdir = 'en') {
+	protected function _folderStructure($subdir = 'src') {
 		$base = $this->_basePath() . $subdir . DS;
 		$Folder = new Folder($base, true);
 		$map = array_unique($this->_categoryMap);
@@ -182,22 +186,32 @@ class ArticleShell extends Shell {
  *
  * @param integer $id
  */
-	protected function _generate($id = null, $subdir = 'en') {
+	protected function _generate($id = null, $subdir = 'src') {
 		$article = $this->Article->view($id);
 		$this->out('Generating article: ' . $article['Article']['title']);
 		$this->_viewVars = compact('article');
 		$html = $this->_render();
+		if (mb_detect_encoding($html, 'UTF-8', true) === false) {
+			echo "NOT UTF8  !!!!!!!!!!\n";
+			return false;
+		}
 		$tmpfile = TMP . 'view_' . $id . '.html';
 		$this->_write($tmpfile, $html);
 		$restfile = $this->_fullpath($article, $subdir);
 		exec("html2rest $tmpfile > $restfile");
+		$this->_delete($tmpfile);
 		$contents = file_get_contents($restfile);
+
+		if (strlen($contents) == 0) {
+			unlink($restfile);
+			echo "CONTENT LENGTH IS ZERO!!!!!!!!!!\n";
+			return false;
+		}
 		$contents = str_replace("\n\n\n", "\n\n", $contents);
 		$meta = "\n.. meta\n\n::\n";
 		$contents = str_replace($meta, ".. meta::", $contents);
 		$contents = ltrim($contents);
 		file_put_contents($restfile, $contents);
-		$this->_delete($tmpfile);
 	}
 
 /**
