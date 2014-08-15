@@ -140,10 +140,10 @@ class ArticleShell extends Shell {
 	protected function _folderStructure($subdir = 'src') {
 		$base = $this->_basePath() . $subdir . DS;
 		$Folder = new Folder($base, true);
-		$map = array_unique($this->_categoryMap);
-		foreach($map as $path) {
-			$Folder->create($base . $path);
-		}
+//		$map = array_unique($this->_categoryMap);
+//		foreach($map as $path) {
+//			$Folder->create($base . $path);
+//		}
 	}
 
 /**
@@ -172,7 +172,10 @@ class ArticleShell extends Shell {
 			'conditions' => array(
 				'Article.category_id' => $id,
 				'Article.parent_id' => null,
-				'Article.lang' => $options['lang']
+				'Article.lang' => $options['lang'],
+				'Article.published' => 1,
+				'Article.deleted' => 0,
+				'NOT' => array('Article.published_date IS NULL')
 			),
 			'fields' => array('Article.id', 'Article.id')
 		));
@@ -187,7 +190,13 @@ class ArticleShell extends Shell {
  * @param integer $id
  */
 	protected function _generate($id = null, $subdir = 'src') {
-		$article = $this->Article->view($id);
+		try {
+			$article = $this->Article->view($id);
+		} catch (Exception $e) {
+			$this->out('skipping article: ' . $id);
+			return;
+		}
+
 		$this->out('Generating article: ' . $article['Article']['title']);
 		$this->_viewVars = compact('article');
 		$html = $this->_render();
@@ -237,9 +246,10 @@ class ArticleShell extends Shell {
  * @return string
  */
 	protected function _fullpath($article, $subdir) {
-		$base = $this->_basePath() . $subdir . DS . $this->_categoryMap[$article['Article']['category_id']] . DS;
+		$base = $this->_basePath() . $subdir . DS;// . $this->_categoryMap[$article['Article']['category_id']] . DS;
 		$date = $this->_datedirs($article['Article']['created'], $base);
-		return $base . $date . Inflector::slug($article['Article']['title'], '-') . '.rst';
+		$file = Inflector::slug($article['Article']['title'], '-') . '.rst';
+		return $base . $date . $file;
 	}
 
 /**
@@ -249,8 +259,8 @@ class ArticleShell extends Shell {
  * @return string
  */
 	protected function _datedirs($created, $base) {
-		$parts = explode('-', $created, 3);
-		array_pop($parts);
+		$date = explode(' ', $created, 2);
+		$parts = explode('-', $date[0], 3);
 		$path = implode(DS, $parts) . DS;
 		$Folder = new Folder($base, true);
 		$Folder->create($base . $path);

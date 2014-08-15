@@ -29,17 +29,6 @@
 <div class="row">
 		<article class="columns ten <?php echo $markup ?>">
 			<h1><?php echo $heading;?></h1>
-			<span class="author">
-				<p>
-				<?php echo __d('blazon', 'by %s', $article['User']['username']); ?>
-				<time datetime="<?php echo $this->Time->format($article['Article']['published_date'], '%Y-%m-%d'); ?>">
-				<?php
-					$articleDate = $this->Time->format($article['Article']['published_date'], '%B %d, %Y');
-					echo __('on %s', $articleDate);
-				?>
-				</time>
-				</p>
-			</span>
 			<div class="intro">
 				<p>
 					<?php echo $article['Article']['intro']; ?>

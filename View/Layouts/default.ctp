@@ -20,5 +20,7 @@
 		<?php echo $this->fetch('content'); ?>
 	</div>
 </body>
-.. meta<pre><?php foreach ($metatags as $name => $content) : ?>&nbsp;&nbsp;&nbsp;&nbsp;:<?php echo $name;?>: <?php echo $content; ?><br><?php endforeach; ?></pre>
+.. author:: <?php echo $article['User']['username']; ?><br>
+.. categories:: <?php echo (in_array($article['Category']['slug'], array('news', 'articles'))) ? $article['Category']['slug'] : 'articles, ' . $article['Category']['slug']; ?><br>
+.. tags:: <?php echo Configure::read('App.metatags.keywords'); ?><br>
 </html>
